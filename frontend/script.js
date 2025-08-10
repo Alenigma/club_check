@@ -86,7 +86,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Teacher Page Logic ---
     if (document.getElementById('qr-reader')) {
-        const studentListDiv = document.getElementById('student-list');
+
+        const syncOfflineScans = async () => {
+            const offlineScans = JSON.parse(localStorage.getItem('offlineScans') || '[]');
+            if (navigator.onLine && offlineScans.length > 0) {
+                console.log(`Syncing ${offlineScans.length} offline scans...`);
+                const promises = offlineScans.map(token => 
+                    fetch(`${API_URL}/attendance/scan-student?token=${token}`, { method: 'POST' })
+                );
+
+                try {
+                    const results = await Promise.all(promises);
+                    // Check if all requests were successful
+                    if (results.every(res => res.ok)) {
+                        localStorage.removeItem('offlineScans');
+                        alert(`Successfully synced ${offlineScans.length} saved scans.`);
+                    } else {
+                        alert('Some offline scans could not be synced. Please try again later.');
+                    }
+                } catch (error) {
+                    console.error('Error during sync:', error);
+                }
+            }
+        };
+
+        // Listen for when the browser comes back online
+        window.addEventListener('online', syncOfflineScans);
+        // Attempt to sync on page load
+        syncOfflineScans();
 
         // --- QR Scanner ---
         const qrReaderDiv = document.getElementById('qr-reader');
@@ -94,55 +121,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const onScanSuccess = async (decodedText, decodedResult) => {
             console.log(`Scan successful: ${decodedText}`);
+            
             try {
-                // Stop scanning to free up the camera
-                await html5QrCode.stop();
-            } catch (e) {
-                console.error("Failed to stop the scanner", e);
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/attendance/scan-student?token=${decodedText}`, {
-                    method: 'POST',
-                });
+                // Always try to fetch first
+                const response = await fetch(`${API_URL}/attendance/scan-student?token=${decodedText}`, { method: 'POST' });
+                if (!response.ok) throw new Error('Server responded with an error');
                 const data = await response.json();
-                alert(data.message || 'Error processing scan.');
+                alert(data.message || 'Scan processed.');
             } catch (error) {
-                console.error('Error sending token to server:', error);
-                alert('Failed to mark attendance.');
+                // This block executes if fetch fails (e.g., no network)
+                console.warn('Scan failed, saving to offline queue.', error);
+                const offlineScans = JSON.parse(localStorage.getItem('offlineScans') || '[]');
+                offlineScans.push(decodedText);
+                localStorage.setItem('offlineScans', JSON.stringify(offlineScans));
+                alert('Network error. Scan saved locally.');
             }
         };
 
-        const onScanFailure = (error) => {
-            // This callback is required but we can leave it empty if we don't want to log anything.
-            // console.warn(`Code scan error = ${error}`);
-        };
+        const onScanFailure = (error) => {};
 
         Html5Qrcode.getCameras().then(cameras => {
             if (cameras && cameras.length) {
                 let cameraId = cameras[0].id;
                 const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-                if (backCamera) {
-                    cameraId = backCamera.id;
-                }
-                
+                if (backCamera) cameraId = backCamera.id;
                 const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
                 html5QrCode.start(cameraId, config, onScanSuccess, onScanFailure)
-                    .catch(err => {
-                        console.error("Failed to start scanner", err);
-                        qrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`;
-                    });
+                    .catch(err => qrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`);
             } else {
-                console.error("No cameras found.");
-                qrReaderDiv.innerHTML = "<strong>Error:</strong> No cameras found on this device.";
+                qrReaderDiv.innerHTML = "<strong>Error:</strong> No cameras found.";
             }
-        }).catch(err => {
-            console.error("Error getting camera list:", err);
-            qrReaderDiv.innerHTML = "<strong>Error:</strong> Could not get camera permissions.";
-        });
+        }).catch(err => qrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`);
 
         // --- Manual Attendance ---
+        const studentListDiv = document.getElementById('student-list');
         const fetchStudents = async () => {
             try {
                 const response = await fetch(`${API_URL}/users/`);
@@ -155,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     studentListDiv.appendChild(studentEl);
                 });
             } catch (error) {
-                console.error('Error fetching students:', error);
                 studentListDiv.innerHTML = 'Failed to load students.';
             }
         };
@@ -174,11 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         e.target.disabled = true;
                         e.target.textContent = 'Marked';
                     } else {
-                        const data = await response.json();
-                        throw new Error(data.detail || 'Failed to mark attendance');
+                        throw new Error('Failed to mark attendance');
                     }
                 } catch (error) {
-                    console.error('Error marking attendance:', error);
                     alert('Error marking attendance.');
                 }
             }
