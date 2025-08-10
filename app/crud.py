@@ -36,3 +36,12 @@ def set_user_otp_secret(db: Session, user_id: int, secret: str):
         db.commit()
         db.refresh(db_user)
     return db_user
+
+def update_master_qr_mode(db: Session, teacher_id: int, enabled: bool, secret: str = None):
+    db_teacher = get_user(db, teacher_id)
+    if db_teacher and db_teacher.role == 'teacher':
+        db_teacher.master_qr_mode_enabled = enabled
+        db_teacher.master_qr_secret = secret
+        db.commit()
+        db.refresh(db_teacher)
+    return db_teacher

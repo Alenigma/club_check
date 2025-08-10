@@ -32,6 +32,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fetchQrToken();
         setInterval(fetchQrToken, 30000);
+
+        // --- Student QR Scanner ---
+        const showScannerBtn = document.getElementById('show-scanner-btn');
+        const scannerContainer = document.getElementById('student-scanner-container');
+        const studentQrReaderDiv = document.getElementById('student-qr-reader');
+
+        showScannerBtn.addEventListener('click', () => {
+            scannerContainer.style.display = 'block';
+            showScannerBtn.style.display = 'none';
+
+            const studentScanner = new Html5Qrcode("student-qr-reader");
+
+            const onScanSuccess = async (decodedText, decodedResult) => {
+                console.log(`Scan successful: ${decodedText}`);
+                try {
+                    await studentScanner.stop();
+                    scannerContainer.style.display = 'none';
+                    showScannerBtn.style.display = 'block';
+                } catch (e) { console.error("Failed to stop scanner", e); }
+
+                try {
+                    const response = await fetch(`${API_URL}/attendance/scan-lecture?secret=${decodedText}&student_id=${studentId}`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    alert(data.message || 'Error');
+                } catch (error) {
+                    alert('Failed to mark attendance.');
+                }
+            };
+
+            const onScanFailure = (error) => {
+                // required but can be empty
+            };
+
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                    studentScanner.start(cameras[0].id, config, onScanSuccess, onScanFailure)
+                        .catch(err => {
+                            console.error("Failed to start student scanner", err);
+                            studentQrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`;
+                        });
+                } else {
+                    studentQrReaderDiv.innerHTML = "<strong>Error:</strong> No cameras found.";
+                }
+            }).catch(err => {
+                studentQrReaderDiv.innerHTML = `<strong>Error:</strong> Could not get camera permissions. ${err}`;
+            });
+        });
     }
 
     // --- Teacher Page Logic ---
@@ -135,5 +185,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         fetchStudents();
+
+        // --- Master QR Mode --- 
+        const enableMasterQrBtn = document.getElementById('enable-master-qr');
+        const disableMasterQrBtn = document.getElementById('disable-master-qr');
+        const masterQrDisplay = document.getElementById('master-qr-display');
+        const masterQrCodeDiv = document.getElementById('master-qr-code');
+        const teacherId = 1; // Hardcoded for MVP
+
+        enableMasterQrBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_URL}/teacher/master-qr/enable/${teacherId}`, { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    masterQrCodeDiv.innerHTML = '';
+                    const qr = qrcode(0, 'L');
+                    qr.addData(data.master_qr_secret);
+                    qr.make();
+                    masterQrCodeDiv.innerHTML = qr.createImgTag(8);
+
+                    masterQrDisplay.style.display = 'block';
+                    enableMasterQrBtn.style.display = 'none';
+                } else {
+                    throw new Error(data.detail || 'Failed to enable mode');
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        disableMasterQrBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_URL}/teacher/master-qr/disable/${teacherId}`, { method: 'POST' });
+                if (response.ok) {
+                    masterQrDisplay.style.display = 'none';
+                    enableMasterQrBtn.style.display = 'block';
+                    masterQrCodeDiv.innerHTML = '';
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Failed to disable mode');
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        });
     }
 });

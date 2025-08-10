@@ -20,8 +20,22 @@
 
         <h2>Manual Attendance</h2>
         <div id="student-list"></div>
+
+        <hr>
+
+        <h2>Master QR Code Mode</h2>
+        <div id="master-qr-controls">
+            <p>Enable this mode to generate a QR code for students to scan when you are absent.</p>
+            <button id="enable-master-qr">Enable Mode</button>
+            <div id="master-qr-display" style="display: none;">
+                <h3>Current Master QR Code:</h3>
+                <div id="master-qr-code"></div>
+                <button id="disable-master-qr">Disable Mode</button>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="script.js"></script>
 </body>

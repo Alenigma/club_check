@@ -6,7 +6,9 @@ from . import crud, schemas, models
 from .database import SessionLocal, engine
 from typing import List
 import pyotp
-from datetime import timedelta
+import uuid
+from datetime import timedelta, datetime
+from jose import JWTError, jwt
 
 # This is insecure, replace with a real secret key management
 SECRET_KEY = "your-super-secret-key"
@@ -72,3 +74,35 @@ def scan_student_qr(token: str, db: Session = Depends(get_db)):
                 return {"message": f"Attendance marked for {user.full_name}"}
     
     raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+# --- Master QR Code for Teachers ---
+
+@api_router.post("/teacher/master-qr/enable/{teacher_id}")
+def enable_master_qr(teacher_id: int, db: Session = Depends(get_db)):
+    teacher = crud.get_user(db, teacher_id)
+    if not teacher or teacher.role != 'teacher':
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    new_secret = str(uuid.uuid4())
+    crud.update_master_qr_mode(db, teacher_id, True, new_secret)
+    return {"message": "Master QR mode enabled", "master_qr_secret": new_secret}
+
+@api_router.post("/teacher/master-qr/disable/{teacher_id}")
+def disable_master_qr(teacher_id: int, db: Session = Depends(get_db)):
+    teacher = crud.get_user(db, teacher_id)
+    if not teacher or teacher.role != 'teacher':
+        raise HTTPException(status_code=404, detail="Teacher not found")
+
+    crud.update_master_qr_mode(db, teacher_id, False, None)
+    return {"message": "Master QR mode disabled"}
+
+@api_router.post("/attendance/scan-lecture")
+def scan_lecture_qr(secret: str, student_id: int, db: Session = Depends(get_db)):
+    # This is a simplified check. In a real app, you'd find the teacher associated with the student/course.
+    teachers = db.query(models.User).filter(models.User.role == 'teacher').all()
+    for teacher in teachers:
+        if teacher.master_qr_mode_enabled and teacher.master_qr_secret == secret:
+            crud.mark_attendance(db, student_id=student_id)
+            return {"message": f"Attendance marked by master QR from {teacher.full_name}"}
+            
+    raise HTTPException(status_code=400, detail="Invalid or inactive Master QR code")

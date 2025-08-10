@@ -13,6 +13,8 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="student") # student or teacher
     otp_secret = Column(String, nullable=True)
+    master_qr_mode_enabled = Column(Boolean, default=False)
+    master_qr_secret = Column(String, nullable=True)
 
 
 class Attendance(Base):

@@ -13,8 +13,17 @@
         <div id="qr-code"></div>
         <p>This code refreshes every 30 seconds.</p>
         <p>Student: John Student (ID: 2)</p>
+
+        <hr>
+        <h2>Scan Master QR Code</h2>
+        <p>If your teacher is absent, scan their master QR code to mark your attendance.</p>
+        <button id="show-scanner-btn">Scan Master QR</button>
+        <div id="student-scanner-container" style="display: none;">
+             <div id="student-qr-reader" style="width: 500px"></div>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="script.js"></script>
 </body>
 </html>
