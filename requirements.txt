@@ -9,3 +9,5 @@ pydantic-settings
 python-multipart
 python-dotenv
 pytest
+alembic
+psycopg2-binary

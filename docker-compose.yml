@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: club_check
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      CLUB_CHECK_DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/club_check
+      CLUB_CHECK_SECRET_KEY: ${CLUB_CHECK_SECRET_KEY:-change-me}
+      CLUB_CHECK_CORS_ORIGINS: ${CLUB_CHECK_CORS_ORIGINS:-http://localhost:8000}
+      CLUB_CHECK_CREATE_TABLES_ON_STARTUP: "false"
+      CLUB_CHECK_SEED_ON_STARTUP: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: /entrypoint.sh
+
+volumes:
+  pgdata:

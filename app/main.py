@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,9 +13,23 @@ settings = get_settings()
 app = FastAPI(title=settings.app_name)
 
 # CORS
+origins = settings.cors_origins
+if isinstance(origins, str):
+    raw_value = origins.strip()
+    if raw_value == "*":
+        origins = ["*"]
+    else:
+        try:
+            parsed = json.loads(raw_value)
+            if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
+                origins = parsed
+            else:
+                origins = [o.strip() for o in raw_value.split(",") if o.strip()]
+        except json.JSONDecodeError:
+            origins = [o.strip() for o in raw_value.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

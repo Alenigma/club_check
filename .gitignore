@@ -72,5 +72,6 @@ Thumbs.db
 node_modules/
 
 /.env
+/.cursorignore
 /app/__pycache__/
 /club_check.db
