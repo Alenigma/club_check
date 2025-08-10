@@ -1,15 +1,16 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard</title>
+    <title>Панель преподавателя</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Teacher Dashboard</h1>
+        <h1>Панель преподавателя</h1>
+        <p style="font-size: 0.9em; color: #666;">Защищённая зона. Может потребоваться авторизация при первом действии.</p>
         
         <div id="scanner-container">
             <div id="qr-reader" style="width: 500px"></div>
@@ -18,19 +19,23 @@
 
         <hr>
 
-        <h2>Manual Attendance</h2>
+        <h2>Ручная отметка</h2>
+        <label for="section-select">Секция:</label>
+        <select id="section-select" style="margin-bottom: 12px;"></select>
         <div id="student-list"></div>
 
         <hr>
 
-        <h2>Master QR Code Mode</h2>
+        <h2>Режим мастер-QR</h2>
         <div id="master-qr-controls">
-            <p>Enable this mode to generate a QR code for students to scan when you are absent.</p>
-            <button id="enable-master-qr">Enable Mode</button>
+            <p>Включите режим, чтобы сгенерировать QR для студентов, когда вы отсутствуете.</p>
+            <label for="teacher-id-input">Ваш ID преподавателя:</label>
+            <input id="teacher-id-input" type="number" placeholder="напр. 1" style="width: 120px; margin-right: 8px;"/>
+            <button id="enable-master-qr">Включить режим</button>
             <div id="master-qr-display" style="display: none;">
-                <h3>Current Master QR Code:</h3>
+                <h3>Текущий мастер-QR:</h3>
                 <div id="master-qr-code"></div>
-                <button id="disable-master-qr">Disable Mode</button>
+                <button id="disable-master-qr">Выключить режим</button>
             </div>
         </div>
     </div>

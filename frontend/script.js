@@ -2,10 +2,45 @@
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'http://localhost:8000/api';
 
+    const getToken = () => localStorage.getItem('token');
+    const setToken = (t) => localStorage.setItem('token', t);
+
+    const parseJwt = (token) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (_) {
+            return null;
+        }
+    };
+
+    const enforceLogin = (nextPage) => {
+        if (!getToken()) {
+            window.location.href = `login.html?next=${encodeURIComponent(nextPage)}`;
+            return false;
+        }
+        return true;
+    };
+
+    const apiFetch = async (url, options = {}) => {
+        const headers = options.headers ? { ...options.headers } : {};
+        const token = getToken();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return fetch(url, { ...options, headers });
+    };
+
     // --- Student Page Logic ---
     if (document.getElementById('qr-code')) {
+        if (!enforceLogin('student.html')) return;
+        const payload = parseJwt(getToken());
+        const currentUserId = payload?.uid;
         const qrCodeDiv = document.getElementById('qr-code');
-        const studentId = 2; // Hardcoded for MVP
+        const studentId = currentUserId || 0;
+        let selectedSectionId = null;
 
         const generateQrCode = (token) => {
             qrCodeDiv.innerHTML = '';
@@ -15,23 +50,44 @@ document.addEventListener('DOMContentLoaded', () => {
             qrCodeDiv.innerHTML = qr.createImgTag(8);
         };
 
+        const attendanceEl = document.getElementById('attendance-count');
+        const updateAttendanceCount = async () => {
+            try {
+                const url = selectedSectionId ? `${API_URL}/attendance/count?section_id=${selectedSectionId}` : `${API_URL}/attendance/count`;
+                const res = await apiFetch(url);
+                const data = await res.json();
+                if (res.ok) {
+                    if (selectedSectionId) {
+                        attendanceEl.textContent = `Посещений в секции: ${data.count}`;
+                    } else {
+                        attendanceEl.textContent = `Посещений: ${data.count}`;
+                    }
+                } else {
+                    attendanceEl.textContent = 'Посещений: —';
+                }
+            } catch (e) {
+                attendanceEl.textContent = 'Посещений: —';
+            }
+        };
+
         const fetchQrToken = async () => {
             try {
-                const response = await fetch(`${API_URL}/student/qr-token/${studentId}`);
+                const response = await apiFetch(`${API_URL}/student/qr-token/${studentId}`);
                 const data = await response.json();
                 if (response.ok) {
                     generateQrCode(data.token);
                 } else {
-                    throw new Error(data.detail || 'Failed to fetch QR token');
+                    throw new Error(data.detail || 'Не удалось получить QR-токен');
                 }
             } catch (error) {
-                console.error('Error fetching QR token:', error);
-                qrCodeDiv.innerHTML = 'Error loading QR code.';
+                console.error('Ошибка получения QR-токена:', error);
+                qrCodeDiv.innerHTML = 'Ошибка загрузки QR-кода.';
             }
         };
 
         fetchQrToken();
         setInterval(fetchQrToken, 30000);
+        updateAttendanceCount();
 
         // --- Student QR Scanner ---
         const showScannerBtn = document.getElementById('show-scanner-btn');
@@ -53,13 +109,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) { console.error("Failed to stop scanner", e); }
 
                 try {
-                    const response = await fetch(`${API_URL}/attendance/scan-lecture?secret=${decodedText}&student_id=${studentId}`, {
+                    if (!selectedSectionId) {
+                        alert('Сначала выберите секцию.');
+                        return;
+                    }
+                    const response = await apiFetch(`${API_URL}/attendance/scan-lecture?secret=${decodedText}&student_id=${studentId}&section_id=${selectedSectionId}`, {
                         method: 'POST'
                     });
                     const data = await response.json();
-                    alert(data.message || 'Error');
+                    if (response.ok) {
+                        alert(data.message || 'Отмечено.');
+                        updateAttendanceCount();
+                    } else {
+                        alert(data.detail || 'Ошибка.');
+                    }
                 } catch (error) {
-                    alert('Failed to mark attendance.');
+                    alert('Не удалось отметить посещение.');
                 }
             };
 
@@ -72,40 +137,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
                     studentScanner.start(cameras[0].id, config, onScanSuccess, onScanFailure)
                         .catch(err => {
-                            console.error("Failed to start student scanner", err);
-                            studentQrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`;
+                            console.error("Не удалось запустить сканер студента", err);
+                            studentQrReaderDiv.innerHTML = `<strong>Ошибка:</strong> ${err}`;
                         });
                 } else {
-                    studentQrReaderDiv.innerHTML = "<strong>Error:</strong> No cameras found.";
+                    studentQrReaderDiv.innerHTML = "<strong>Ошибка:</strong> Камеры не найдены.";
                 }
             }).catch(err => {
-                studentQrReaderDiv.innerHTML = `<strong>Error:</strong> Could not get camera permissions. ${err}`;
+                studentQrReaderDiv.innerHTML = `<strong>Ошибка:</strong> Нет доступа к камере. ${err}`;
             });
         });
+
+        // Изменение секции обновляет счётчик
+        const sectionSelect = document.getElementById('section-select');
+        if (sectionSelect) {
+            sectionSelect.addEventListener('change', (e) => {
+                selectedSectionId = parseInt(e.target.value || '0') || null;
+                updateAttendanceCount();
+            });
+        }
     }
 
     // --- Teacher Page Logic ---
     if (document.getElementById('qr-reader')) {
+        if (!enforceLogin('teacher.html')) return;
+        let selectedSectionId = null;
 
         const syncOfflineScans = async () => {
             const offlineScans = JSON.parse(localStorage.getItem('offlineScans') || '[]');
             if (navigator.onLine && offlineScans.length > 0) {
-                console.log(`Syncing ${offlineScans.length} offline scans...`);
-                const promises = offlineScans.map(token => 
-                    fetch(`${API_URL}/attendance/scan-student?token=${token}`, { method: 'POST' })
+                console.log(`Синхронизация ${offlineScans.length} офлайн-сканов...`);
+                const promises = offlineScans.map(item => 
+                    apiFetch(`${API_URL}/attendance/scan-student?token=${encodeURIComponent(item.token)}&section_id=${item.section_id}`, { method: 'POST' })
                 );
 
                 try {
                     const results = await Promise.all(promises);
-                    // Check if all requests were successful
                     if (results.every(res => res.ok)) {
                         localStorage.removeItem('offlineScans');
-                        alert(`Successfully synced ${offlineScans.length} saved scans.`);
+                        alert(`Успешно синхронизировано: ${offlineScans.length}.`);
                     } else {
-                        alert('Some offline scans could not be synced. Please try again later.');
+                        alert('Некоторые офлайн-сканы не удалось отправить. Попробуйте позже.');
                     }
                 } catch (error) {
-                    console.error('Error during sync:', error);
+                    console.error('Ошибка синхронизации:', error);
                 }
             }
         };
@@ -123,18 +198,20 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Scan successful: ${decodedText}`);
             
             try {
-                // Always try to fetch first
-                const response = await fetch(`${API_URL}/attendance/scan-student?token=${decodedText}`, { method: 'POST' });
-                if (!response.ok) throw new Error('Server responded with an error');
+                if (!selectedSectionId) {
+                    alert('Сначала выберите секцию.');
+                    return;
+                }
+                const response = await apiFetch(`${API_URL}/attendance/scan-student?token=${decodedText}&section_id=${selectedSectionId}`, { method: 'POST' });
+                if (!response.ok) throw new Error('Сервер ответил ошибкой');
                 const data = await response.json();
-                alert(data.message || 'Scan processed.');
+                alert('Скан обработан.');
             } catch (error) {
-                // This block executes if fetch fails (e.g., no network)
-                console.warn('Scan failed, saving to offline queue.', error);
+                console.warn('Сбой сканирования, сохраняю в офлайн-очередь.', error);
                 const offlineScans = JSON.parse(localStorage.getItem('offlineScans') || '[]');
-                offlineScans.push(decodedText);
+                offlineScans.push({ token: decodedText, section_id: selectedSectionId });
                 localStorage.setItem('offlineScans', JSON.stringify(offlineScans));
-                alert('Network error. Scan saved locally.');
+                alert('Ошибка сети. Скан сохранён локально.');
             }
         };
 
@@ -157,17 +234,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const studentListDiv = document.getElementById('student-list');
         const fetchStudents = async () => {
             try {
-                const response = await fetch(`${API_URL}/users/`);
+                const response = await apiFetch(`${API_URL}/users/`);
                 const students = await response.json();
                 studentListDiv.innerHTML = '';
                 students.filter(s => s.role === 'student').forEach(student => {
                     const studentEl = document.createElement('div');
                     studentEl.className = 'student-item';
-                    studentEl.innerHTML = `<span>${student.full_name} (ID: ${student.id})</span><button data-id="${student.id}">Mark Present</button>`;
+                    studentEl.innerHTML = `<span>${student.full_name} (ID: ${student.id})</span><button data-id="${student.id}">Отметить</button>`;
                     studentListDiv.appendChild(studentEl);
                 });
             } catch (error) {
-                studentListDiv.innerHTML = 'Failed to load students.';
+                studentListDiv.innerHTML = 'Не удалось загрузить студентов.';
             }
         };
 
@@ -175,20 +252,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.tagName === 'BUTTON') {
                 const studentId = e.target.dataset.id;
                 try {
-                    const response = await fetch(`${API_URL}/attendance/manual`, {
+                    if (!selectedSectionId) {
+                        alert('Сначала выберите секцию.');
+                        return;
+                    }
+                    const response = await apiFetch(`${API_URL}/attendance/manual`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ student_id: parseInt(studentId) })
+                        body: JSON.stringify({ student_id: parseInt(studentId), section_id: selectedSectionId })
                     });
                     if (response.ok) {
-                        alert(`Marked student ${studentId} as present.`);
+                        alert(`Студент ${studentId} отмечен.`);
                         e.target.disabled = true;
-                        e.target.textContent = 'Marked';
+                        e.target.textContent = 'Отмечено';
                     } else {
-                        throw new Error('Failed to mark attendance');
+                        throw new Error('Не удалось отметить посещение');
                     }
                 } catch (error) {
-                    alert('Error marking attendance.');
+                    alert('Ошибка при отметке посещения.');
                 }
             }
         });
@@ -200,11 +281,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const disableMasterQrBtn = document.getElementById('disable-master-qr');
         const masterQrDisplay = document.getElementById('master-qr-display');
         const masterQrCodeDiv = document.getElementById('master-qr-code');
-        const teacherId = 1; // Hardcoded for MVP
+        const teacherIdInput = document.getElementById('teacher-id-input');
+        const teacherPayload = parseJwt(getToken());
+        if (teacherPayload?.uid) {
+            teacherIdInput.value = teacherPayload.uid;
+        }
 
         enableMasterQrBtn.addEventListener('click', async () => {
             try {
-                const response = await fetch(`${API_URL}/teacher/master-qr/enable/${teacherId}`, { method: 'POST' });
+                const teacherId = parseInt(teacherIdInput.value || '0');
+                if (!teacherId) { alert('Введите ваш ID преподавателя'); return; }
+                const response = await apiFetch(`${API_URL}/teacher/master-qr/enable/${teacherId}`, { method: 'POST' });
                 const data = await response.json();
                 if (response.ok) {
                     masterQrCodeDiv.innerHTML = '';
@@ -216,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     masterQrDisplay.style.display = 'block';
                     enableMasterQrBtn.style.display = 'none';
                 } else {
-                    throw new Error(data.detail || 'Failed to enable mode');
+                    throw new Error(data.detail || 'Не удалось включить режим');
                 }
             } catch (error) {
                 alert(error.message);
@@ -225,18 +312,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         disableMasterQrBtn.addEventListener('click', async () => {
             try {
-                const response = await fetch(`${API_URL}/teacher/master-qr/disable/${teacherId}`, { method: 'POST' });
+                const teacherId = parseInt(teacherIdInput.value || '0');
+                if (!teacherId) { alert('Введите ваш ID преподавателя'); return; }
+                const response = await apiFetch(`${API_URL}/teacher/master-qr/disable/${teacherId}`, { method: 'POST' });
                 if (response.ok) {
                     masterQrDisplay.style.display = 'none';
                     enableMasterQrBtn.style.display = 'block';
                     masterQrCodeDiv.innerHTML = '';
                 } else {
                     const data = await response.json();
-                    throw new Error(data.detail || 'Failed to disable mode');
+                    throw new Error(data.detail || 'Не удалось выключить режим');
                 }
             } catch (error) {
                 alert(error.message);
             }
         });
+
+        // --- Sections UI ---
+        const sectionSelect = document.getElementById('section-select');
+        const loadSections = async () => {
+            try {
+                const response = await apiFetch(`${API_URL}/sections`);
+                const sections = await response.json();
+                sectionSelect.innerHTML = '<option value="">Выберите секцию...</option>';
+                sections.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (#${s.id})`;
+                    sectionSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Не удалось загрузить секции', e);
+            }
+        };
+        if (sectionSelect) {
+            sectionSelect.addEventListener('change', (e) => {
+                selectedSectionId = parseInt(e.target.value || '0') || null;
+            });
+            loadSections();
+        }
     }
 });
+

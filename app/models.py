@@ -25,3 +25,37 @@ class Attendance(Base):
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
     student = relationship("User")
+
+
+# --- New multi-section support ---
+
+class Section(Base):
+    __tablename__ = "sections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+
+
+class SectionStudent(Base):
+    __tablename__ = "section_students"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section_id = Column(Integer, ForeignKey("sections.id"), index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), index=True)
+
+
+class SectionTeacher(Base):
+    __tablename__ = "section_teachers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section_id = Column(Integer, ForeignKey("sections.id"), index=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), index=True)
+
+
+class SectionAttendance(Base):
+    __tablename__ = "section_attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section_id = Column(Integer, ForeignKey("sections.id"), index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), index=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)

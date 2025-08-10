@@ -6,3 +6,5 @@ passlib[bcrypt]
 qrcode[pil]
 pyotp
 pydantic-settings
+python-multipart
+python-dotenv

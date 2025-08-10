@@ -39,3 +39,43 @@ class Attendance(AttendanceBase):
 
 class ManualAttendance(BaseModel):
     student_id: int
+    section_id: int
+
+
+# --- Sections ---
+
+class SectionBase(BaseModel):
+    name: str
+
+
+class SectionCreate(SectionBase):
+    pass
+
+
+class Section(SectionBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class SectionMembership(BaseModel):
+    section_id: int
+    user_id: int
+
+
+class SectionAttendanceBase(BaseModel):
+    section_id: int
+    student_id: int
+
+
+class SectionAttendanceCreate(SectionAttendanceBase):
+    pass
+
+
+class SectionAttendance(SectionAttendanceBase):
+    id: int
+    timestamp: datetime.datetime
+
+    class Config:
+        from_attributes = True

@@ -1,23 +1,27 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student QR Code</title>
+    <title>QR-код студента</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Your QR Code</h1>
+        <h1>Ваш QR-код</h1>
         <div id="qr-code"></div>
-        <p>This code refreshes every 30 seconds.</p>
-        <p>Student: John Student (ID: 2)</p>
+        <p>Код обновляется каждые 30 секунд.</p>
+        <p>Студент: John Student (ID: 2)</p>
+        <p id="attendance-count" style="margin-top: 12px; font-weight: bold;">Посещений: —</p>
+        <p style="font-size: 0.9em; color: #666;">Может потребоваться авторизация при первом действии.</p>
 
         <hr>
-        <h2>Scan Master QR Code</h2>
-        <p>If your teacher is absent, scan their master QR code to mark your attendance.</p>
-        <button id="show-scanner-btn">Scan Master QR</button>
+        <h2>Сканировать мастер-QR</h2>
+        <label for="section-select">Секция:</label>
+        <select id="section-select" style="margin-bottom: 12px;"></select>
+        <p>Если преподаватель отсутствует, отсканируйте его мастер-QR для отметки посещения.</p>
+        <button id="show-scanner-btn">Сканировать мастер-QR</button>
         <div id="student-scanner-container" style="display: none;">
              <div id="student-qr-reader" style="width: 500px"></div>
         </div>

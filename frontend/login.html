@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-form { max-width: 360px; margin: 0 auto; }
+        .login-form input { width: 100%; padding: 8px; margin: 6px 0; }
+        .login-form button { width: 100%; padding: 10px; }
+        .note { font-size: .9em; color: #666; }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_URL = 'http://localhost:8000/api';
+            const form = document.getElementById('login-form');
+            const roleSelect = document.getElementById('role');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const body = new URLSearchParams();
+                body.append('username', username);
+                body.append('password', password);
+                body.append('grant_type', '');
+                body.append('scope', '');
+                body.append('client_id', '');
+                body.append('client_secret', '');
+                try {
+                    const res = await fetch(`${API_URL}/auth/token`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || 'Ошибка входа');
+                    localStorage.setItem('token', data.access_token);
+                    const target = roleSelect.value === 'teacher' ? 'teacher.html' : 'student.html';
+                    window.location.href = target;
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        });
+    </script>
+    </head>
+<body>
+    <div class="container login-form">
+        <h1>Вход</h1>
+        <p class="note">Используйте логин и пароль. По умолчанию доступны: student/studentpass и teacher/teacherpass.</p>
+        <form id="login-form">
+            <label for="username">Логин</label>
+            <input id="username" type="text" placeholder="student" required />
+
+            <label for="password">Пароль</label>
+            <input id="password" type="password" placeholder="••••••" required />
+
+            <label for="role">Я —</label>
+            <select id="role">
+                <option value="student">Студент</option>
+                <option value="teacher">Преподаватель</option>
+            </select>
+
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+</body>
+</html>
+
+
