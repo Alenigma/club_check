@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     create_tables_on_startup: bool = True
     seed_on_startup: bool = False
 
+    # Optional BLE verification for presence
+    enable_ble_check: bool = False
+    ble_service_uuid_hint: str | None = None
+
 
 @lru_cache()
 def get_settings() -> Settings:

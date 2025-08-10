@@ -133,3 +133,26 @@ def count_section_attendance(db: Session, student_id: int, section_id: int | Non
     if section_id is not None:
         query = query.filter(models.SectionAttendance.section_id == section_id)
     return query.count()
+
+
+# --- Beacons ---
+def add_section_beacon(db: Session, section_id: int, beacon_id: str) -> models.SectionBeacon:
+    beacon = models.SectionBeacon(section_id=section_id, beacon_id=beacon_id)
+    db.add(beacon)
+    db.commit()
+    db.refresh(beacon)
+    return beacon
+
+
+def list_section_beacons(db: Session, section_id: int) -> list[models.SectionBeacon]:
+    return db.query(models.SectionBeacon).filter(models.SectionBeacon.section_id == section_id).all()
+
+
+def is_beacon_allowed_for_section(db: Session, section_id: int, beacon_id: str) -> bool:
+    return (
+        db.query(models.SectionBeacon)
+        .filter(models.SectionBeacon.section_id == section_id)
+        .filter(models.SectionBeacon.beacon_id == beacon_id)
+        .first()
+        is not None
+    )

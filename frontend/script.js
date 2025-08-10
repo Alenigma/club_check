@@ -113,7 +113,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Сначала выберите секцию.');
                         return;
                     }
-                    const response = await apiFetch(`${API_URL}/attendance/scan-lecture?secret=${decodedText}&student_id=${studentId}&section_id=${selectedSectionId}`, {
+                    // Optional Web Bluetooth discovery to prove presence
+                    let beaconId = null;
+                    if (navigator.bluetooth) {
+                        try {
+                            const device = await navigator.bluetooth.requestDevice({
+                                acceptAllDevices: true,
+                                optionalServices: []
+                            });
+                            beaconId = device?.id || device?.name || null;
+                        } catch (e) {
+                            // User cancelled or BLE not available; continue without beacon
+                        }
+                    }
+
+                    const url = new URL(`${API_URL}/attendance/scan-lecture`);
+                    url.searchParams.set('secret', decodedText);
+                    url.searchParams.set('student_id', String(studentId));
+                    url.searchParams.set('section_id', String(selectedSectionId));
+                    if (beaconId) url.searchParams.set('beacon_id', beaconId);
+
+                    const response = await apiFetch(url.toString(), {
                         method: 'POST'
                     });
                     const data = await response.json();
@@ -341,6 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     opt.textContent = `${s.name} (#${s.id})`;
                     sectionSelect.appendChild(opt);
                 });
+                // also fill for beacon management
+                const beaconSectionSelect = document.getElementById('beacon-section-select');
+                if (beaconSectionSelect) {
+                    beaconSectionSelect.innerHTML = '<option value="">Выберите секцию...</option>';
+                    sections.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${s.name} (#${s.id})`;
+                        beaconSectionSelect.appendChild(opt);
+                    });
+                }
             } catch (e) {
                 console.error('Не удалось загрузить секции', e);
             }
@@ -350,6 +381,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedSectionId = parseInt(e.target.value || '0') || null;
             });
             loadSections();
+        }
+
+        // --- BLE beacons UI ---
+        const beaconSectionSelect = document.getElementById('beacon-section-select');
+        const beaconIdInput = document.getElementById('beacon-id-input');
+        const addBeaconBtn = document.getElementById('add-beacon-btn');
+        const beaconList = document.getElementById('beacon-list');
+
+        const loadBeacons = async () => {
+            const sid = parseInt(beaconSectionSelect?.value || '0');
+            if (!sid) { beaconList.innerHTML = ''; return; }
+            try {
+                const res = await apiFetch(`${API_URL}/sections/${sid}/beacons`);
+                const data = await res.json();
+                if (!res.ok) throw new Error('Ошибка загрузки маячков');
+                beaconList.innerHTML = data.map(b => `<div>• ${b.beacon_id}</div>`).join('');
+            } catch (e) {
+                beaconList.innerHTML = 'Не удалось загрузить маячки.';
+            }
+        };
+
+        if (beaconSectionSelect) {
+            beaconSectionSelect.addEventListener('change', loadBeacons);
+        }
+
+        if (addBeaconBtn) {
+            addBeaconBtn.addEventListener('click', async () => {
+                const sid = parseInt(beaconSectionSelect?.value || '0');
+                const bid = (beaconIdInput?.value || '').trim();
+                if (!sid) { alert('Выберите секцию'); return; }
+                if (!bid) { alert('Введите ID маячка'); return; }
+                try {
+                    const res = await apiFetch(`${API_URL}/sections/${sid}/beacons`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ section_id: sid, beacon_id: bid })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || 'Не удалось добавить маячок');
+                    beaconIdInput.value = '';
+                    await loadBeacons();
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
         }
     }
 });

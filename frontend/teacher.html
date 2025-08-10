@@ -38,6 +38,18 @@
                 <button id="disable-master-qr">Выключить режим</button>
             </div>
         </div>
+
+        <hr>
+
+        <h2>BLE-маячки (опционально)</h2>
+        <p style="font-size: 0.9em; color: #666;">Если включено на сервере, студенту нужно быть рядом с одним из зарегистрированных маячков.</p>
+        <div>
+            <label for="beacon-section-select">Секция:</label>
+            <select id="beacon-section-select" style="margin-bottom: 12px;"></select>
+            <input id="beacon-id-input" type="text" placeholder="ID маячка" style="width: 240px; margin-right: 8px;" />
+            <button id="add-beacon-btn">Добавить маячок</button>
+            <div id="beacon-list" style="margin-top: 12px;"></div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>

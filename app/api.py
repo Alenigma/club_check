@@ -14,6 +14,7 @@ from .dependencies import (
     require_roles,
     get_current_user,
 )
+from . import config as config_module
 
 # Dependency
 def get_db():
@@ -181,6 +182,7 @@ def scan_lecture_qr(
     secret: str,
     student_id: int,
     section_id: int,
+    beacon_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_roles(["student"])),
 ):
@@ -191,6 +193,13 @@ def scan_lecture_qr(
 
     if not crud.is_student_in_section(db, section_id=section_id, student_id=student_id):
         raise HTTPException(status_code=400, detail="Student not in section")
+
+    # Optional BLE check
+    if config_module.get_settings().enable_ble_check:
+        if beacon_id is None:
+            raise HTTPException(status_code=400, detail="BLE beacon not provided")
+        if not crud.is_beacon_allowed_for_section(db, section_id=section_id, beacon_id=beacon_id):
+            raise HTTPException(status_code=403, detail="BLE beacon not recognized for this section")
 
     crud.mark_section_attendance(db, section_id=section_id, student_id=student_id)
     return {"message": f"Attendance marked by master QR from {teacher.full_name}"}
@@ -210,6 +219,32 @@ def create_section(
 @api_router.get("/sections", response_model=List[schemas.Section])
 def list_sections(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return crud.list_sections(db)
+
+
+# --- BLE Beacons (optional) ---
+@api_router.post("/sections/{section_id}/beacons", response_model=schemas.SectionBeacon)
+def add_beacon(
+    section_id: int,
+    beacon: schemas.SectionBeaconCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_roles(["teacher"])),
+):
+    if beacon.section_id != section_id:
+        raise HTTPException(status_code=400, detail="section_id mismatch")
+    if not crud.is_teacher_in_section(db, section_id=section_id, teacher_id=current_user.id):
+        raise HTTPException(status_code=403, detail="Teacher not assigned to this section")
+    return crud.add_section_beacon(db, section_id=section_id, beacon_id=beacon.beacon_id)
+
+
+@api_router.get("/sections/{section_id}/beacons", response_model=List[schemas.SectionBeacon])
+def list_beacons(
+    section_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_roles(["teacher"])),
+):
+    if not crud.is_teacher_in_section(db, section_id=section_id, teacher_id=current_user.id):
+        raise HTTPException(status_code=403, detail="Teacher not assigned to this section")
+    return crud.list_section_beacons(db, section_id)
 
 
 @api_router.post("/sections/{section_id}/students/{student_id}")

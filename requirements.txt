@@ -8,3 +8,4 @@ pyotp
 pydantic-settings
 python-multipart
 python-dotenv
+pytest

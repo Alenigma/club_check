@@ -36,6 +36,14 @@ class Section(Base):
     name = Column(String, unique=True, index=True)
 
 
+class SectionBeacon(Base):
+    __tablename__ = "section_beacons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section_id = Column(Integer, ForeignKey("sections.id"), index=True)
+    beacon_id = Column(String, index=True)  # e.g. BLE device id or advertised name/hash
+
+
 class SectionStudent(Base):
     __tablename__ = "section_students"
 

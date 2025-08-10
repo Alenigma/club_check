@@ -79,3 +79,20 @@ class SectionAttendance(SectionAttendanceBase):
 
     class Config:
         from_attributes = True
+
+
+# --- BLE Beacons ---
+class SectionBeaconBase(BaseModel):
+    section_id: int
+    beacon_id: str
+
+
+class SectionBeaconCreate(SectionBeaconBase):
+    pass
+
+
+class SectionBeacon(SectionBeaconBase):
+    id: int
+
+    class Config:
+        from_attributes = True
