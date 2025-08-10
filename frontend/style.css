@@ -1,0 +1,60 @@
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h1 {
+    margin-top: 0;
+}
+
+#qr-code {
+    margin: 1rem auto;
+    padding: 1rem;
+    background: white;
+    display: inline-block;
+}
+
+#qr-code canvas {
+    width: 256px !important;
+    height: 256px !important;
+}
+
+#student-list {
+    text-align: left;
+    margin-top: 1rem;
+}
+
+.student-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.student-item button {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    background-color: #efefef;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.student-item button:hover {
+    background-color: #ddd;
+}
