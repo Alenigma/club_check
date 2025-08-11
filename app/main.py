@@ -12,7 +12,6 @@ settings = get_settings()
 
 app = FastAPI(title=settings.app_name)
 
-# CORS
 origins = settings.cors_origins
 if isinstance(origins, str):
     raw_value = origins.strip()

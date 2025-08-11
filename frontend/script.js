@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'http://localhost:8000/api';
 
@@ -33,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return fetch(url, { ...options, headers });
     };
 
-    // --- Student Page Logic ---
     if (document.getElementById('qr-code')) {
         if (!enforceLogin('student.html')) return;
         const payload = parseJwt(getToken());
@@ -89,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(fetchQrToken, 30000);
         updateAttendanceCount();
 
-        // --- Student QR Scanner ---
         const showScannerBtn = document.getElementById('show-scanner-btn');
         const scannerContainer = document.getElementById('student-scanner-container');
         const studentQrReaderDiv = document.getElementById('student-qr-reader');
@@ -113,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Сначала выберите секцию.');
                         return;
                     }
-                    // Optional Web Bluetooth discovery to prove presence
                     let beaconId = null;
                     if (navigator.bluetooth) {
                         try {
@@ -123,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             beaconId = device?.id || device?.name || null;
                         } catch (e) {
-                            // User cancelled or BLE not available; continue without beacon
                         }
                     }
 
@@ -149,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             const onScanFailure = (error) => {
-                // required but can be empty
             };
 
             Html5Qrcode.getCameras().then(cameras => {
@@ -168,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Изменение секции обновляет счётчик
         const sectionSelect = document.getElementById('section-select');
         if (sectionSelect) {
             sectionSelect.addEventListener('change', (e) => {
@@ -178,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Teacher Page Logic ---
     if (document.getElementById('qr-reader')) {
         if (!enforceLogin('teacher.html')) return;
         let selectedSectionId = null;
@@ -205,12 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Listen for when the browser comes back online
         window.addEventListener('online', syncOfflineScans);
-        // Attempt to sync on page load
         syncOfflineScans();
 
-        // --- QR Scanner ---
         const qrReaderDiv = document.getElementById('qr-reader');
         const html5QrCode = new Html5Qrcode("qr-reader");
 
@@ -250,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }).catch(err => qrReaderDiv.innerHTML = `<strong>Error:</strong> ${err}`);
 
-        // --- Manual Attendance ---
         const studentListDiv = document.getElementById('student-list');
         const fetchStudents = async () => {
             try {
@@ -296,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fetchStudents();
 
-        // --- Master QR Mode --- 
         const enableMasterQrBtn = document.getElementById('enable-master-qr');
         const disableMasterQrBtn = document.getElementById('disable-master-qr');
         const masterQrDisplay = document.getElementById('master-qr-display');
@@ -348,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- Sections UI ---
         const sectionSelect = document.getElementById('section-select');
         const loadSections = async () => {
             try {
@@ -361,7 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     opt.textContent = `${s.name} (#${s.id})`;
                     sectionSelect.appendChild(opt);
                 });
-                // also fill for beacon management
                 const beaconSectionSelect = document.getElementById('beacon-section-select');
                 if (beaconSectionSelect) {
                     beaconSectionSelect.innerHTML = '<option value="">Выберите секцию...</option>';
@@ -383,7 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSections();
         }
 
-        // --- BLE beacons UI ---
         const beaconSectionSelect = document.getElementById('beacon-section-select');
         const beaconIdInput = document.getElementById('beacon-id-input');
         const addBeaconBtn = document.getElementById('add-beacon-btn');

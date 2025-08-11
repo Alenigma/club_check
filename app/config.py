@@ -18,13 +18,11 @@ class Settings(BaseSettings):
 
     database_url: str = Field(default="sqlite:///./club_check.db")
 
-    # Accept raw string from env to allow JSON array or CSV; app will normalize to list
     cors_origins: str = Field(default="*")
 
     create_tables_on_startup: bool = True
     seed_on_startup: bool = False
 
-    # Optional BLE verification for presence
     enable_ble_check: bool = False
     ble_service_uuid_hint: str | None = None
 

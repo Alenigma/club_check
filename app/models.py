@@ -11,7 +11,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
-    role = Column(String, default="student") # student or teacher
+    role = Column(String, default="student")
     otp_secret = Column(String, nullable=True)
     master_qr_mode_enabled = Column(Boolean, default=False)
     master_qr_secret = Column(String, nullable=True)
@@ -27,8 +27,6 @@ class Attendance(Base):
     student = relationship("User")
 
 
-# --- New multi-section support ---
-
 class Section(Base):
     __tablename__ = "sections"
 
@@ -41,7 +39,7 @@ class SectionBeacon(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     section_id = Column(Integer, ForeignKey("sections.id"), index=True)
-    beacon_id = Column(String, index=True)  # e.g. BLE device id or advertised name/hash
+    beacon_id = Column(String, index=True)
 
 
 class SectionStudent(Base):

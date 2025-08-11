@@ -36,11 +36,9 @@ def test_rbac_teacher_only_endpoints(client):
     st = login(client, "student", "pass")
     tch = login(client, "teacher", "pass")
 
-    # student cannot list users
     r = client.get("/api/users/", headers=auth_headers(st))
     assert r.status_code == status.HTTP_403_FORBIDDEN
 
-    # teacher can
     r = client.get("/api/users/", headers=auth_headers(tch))
     assert r.status_code == 200
 

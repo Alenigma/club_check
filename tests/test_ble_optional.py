@@ -25,7 +25,6 @@ def auth_headers(token):
 
 
 def test_ble_check_optional_off(client, monkeypatch):
-    # Ensure BLE check is off via env in this test
     monkeypatch.setenv("CLUB_CHECK_ENABLE_BLE_CHECK", "false")
     import importlib
     import app.config as cfg
@@ -36,7 +35,6 @@ def test_ble_check_optional_off(client, monkeypatch):
     t_tok = login(client, "tb", "pass")
     s_tok = login(client, "sb", "pass")
 
-    # section/link
     r = client.post("/api/sections", json={"name": "BLE-off"}, headers=auth_headers(t_tok))
     section = r.json()
     client.post(f"/api/sections/{section['id']}/teachers/{teacher['id']}", headers=auth_headers(t_tok))
@@ -44,7 +42,6 @@ def test_ble_check_optional_off(client, monkeypatch):
     r = client.post(f"/api/teacher/master-qr/enable/{teacher['id']}", headers=auth_headers(t_tok))
     secret = r.json()["master_qr_secret"]
 
-    # scan without beacon_id should work
     r = client.post(
         f"/api/attendance/scan-lecture?secret={secret}&student_id={student['id']}&section_id={section['id']}",
         headers=auth_headers(s_tok),
@@ -53,7 +50,6 @@ def test_ble_check_optional_off(client, monkeypatch):
 
 
 def test_ble_check_enabled_requires_beacon(client, monkeypatch):
-    # Enable BLE check via env for this test
     monkeypatch.setenv("CLUB_CHECK_ENABLE_BLE_CHECK", "true")
     import importlib
     import app.config as cfg
@@ -71,14 +67,12 @@ def test_ble_check_enabled_requires_beacon(client, monkeypatch):
     r = client.post(f"/api/teacher/master-qr/enable/{teacher['id']}", headers=auth_headers(t_tok))
     secret = r.json()["master_qr_secret"]
 
-    # attempt without beacon -> 400
     r = client.post(
         f"/api/attendance/scan-lecture?secret={secret}&student_id={student['id']}&section_id={section['id']}",
         headers=auth_headers(s_tok),
     )
     assert r.status_code == 400
 
-    # register beacon
     r = client.post(
         f"/api/sections/{section['id']}/beacons",
         json={"section_id": section['id'], "beacon_id": "beacon-xyz"},
@@ -86,7 +80,6 @@ def test_ble_check_enabled_requires_beacon(client, monkeypatch):
     )
     assert r.status_code == 200
 
-    # scan with correct beacon -> 200
     r = client.post(
         f"/api/attendance/scan-lecture?secret={secret}&student_id={student['id']}&section_id={section['id']}&beacon_id=beacon-xyz",
         headers=auth_headers(s_tok),

@@ -16,7 +16,6 @@ from .dependencies import (
 )
 from . import config as config_module
 
-# Dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -25,8 +24,6 @@ def get_db():
         db.close()
 
 api_router = APIRouter()
-
-# --- Auth ---
 
 @api_router.post("/auth/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -62,11 +59,9 @@ def get_attendance_count(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_roles(["student", "teacher"])),
 ):
-    # student sees own count, teacher can pass ?user_id to see student's count
     user_id = current_user.id
     return {"count": crud.count_section_attendance(db, student_id=user_id, section_id=section_id)}
 
-# Create a user
 @api_router.post("/users/", response_model=schemas.User)
 def create_user(
     user: schemas.UserCreate,
@@ -78,7 +73,6 @@ def create_user(
         raise HTTPException(status_code=400, detail="Username already registered")
     return crud.create_user(db=db, user=user)
 
-# Get all users (for teacher)
 @api_router.get("/users/", response_model=List[schemas.User])
 def read_users(
     skip: int = 0,
@@ -89,7 +83,6 @@ def read_users(
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
 
-# Manual attendance marking (per section)
 @api_router.post("/attendance/manual", response_model=schemas.SectionAttendance)
 def manual_attendance(
     attendance: schemas.ManualAttendance,
@@ -102,7 +95,6 @@ def manual_attendance(
         raise HTTPException(status_code=400, detail="Student not in section")
     return crud.mark_section_attendance(db=db, section_id=attendance.section_id, student_id=attendance.student_id)
 
-# Generate QR token for a student
 @api_router.get("/student/qr-token/{user_id}")
 def get_student_qr_token(
     user_id: int,
@@ -122,7 +114,6 @@ def get_student_qr_token(
     totp = pyotp.TOTP(user.otp_secret)
     return {"token": totp.now(), "expires_in": 30}
 
-# Scan student's QR code (per section)
 @api_router.post("/attendance/scan-student", response_model=schemas.SectionAttendance)
 def scan_student_qr(
     token: str,
@@ -130,7 +121,6 @@ def scan_student_qr(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_roles(["teacher"])),
 ):
-    # In a real app, you'd need to find which user this token belongs to.
     users = crud.get_users(db)
     for user in users:
         if user.otp_secret:
@@ -143,8 +133,6 @@ def scan_student_qr(
                 return crud.mark_section_attendance(db, section_id=section_id, student_id=user.id)
 
     raise HTTPException(status_code=400, detail="Invalid or expired token")
-
-# --- Master QR Code for Teachers ---
 
 @api_router.post("/teacher/master-qr/enable/{teacher_id}")
 def enable_master_qr(
@@ -186,7 +174,6 @@ def scan_lecture_qr(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_roles(["student"])),
 ):
-    # Find teacher by secret and ensure student belongs to the section
     teacher = crud.find_teacher_by_master_secret(db, secret)
     if not teacher:
         raise HTTPException(status_code=400, detail="Invalid or inactive Master QR code")
@@ -194,7 +181,6 @@ def scan_lecture_qr(
     if not crud.is_student_in_section(db, section_id=section_id, student_id=student_id):
         raise HTTPException(status_code=400, detail="Student not in section")
 
-    # Optional BLE check
     if config_module.get_settings().enable_ble_check:
         if beacon_id is None:
             raise HTTPException(status_code=400, detail="BLE beacon not provided")
@@ -205,8 +191,6 @@ def scan_lecture_qr(
     return {"message": f"Attendance marked by master QR from {teacher.full_name}"}
 
 
-# --- Sections ---
-
 @api_router.post("/sections", response_model=schemas.Section)
 def create_section(
     section: schemas.SectionCreate,
@@ -215,13 +199,10 @@ def create_section(
 ):
     return crud.create_section(db, section)
 
-
 @api_router.get("/sections", response_model=List[schemas.Section])
 def list_sections(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return crud.list_sections(db)
 
-
-# --- BLE Beacons (optional) ---
 @api_router.post("/sections/{section_id}/beacons", response_model=schemas.SectionBeacon)
 def add_beacon(
     section_id: int,
@@ -235,7 +216,6 @@ def add_beacon(
         raise HTTPException(status_code=403, detail="Teacher not assigned to this section")
     return crud.add_section_beacon(db, section_id=section_id, beacon_id=beacon.beacon_id)
 
-
 @api_router.get("/sections/{section_id}/beacons", response_model=List[schemas.SectionBeacon])
 def list_beacons(
     section_id: int,
@@ -245,7 +225,6 @@ def list_beacons(
     if not crud.is_teacher_in_section(db, section_id=section_id, teacher_id=current_user.id):
         raise HTTPException(status_code=403, detail="Teacher not assigned to this section")
     return crud.list_section_beacons(db, section_id)
-
 
 @api_router.post("/sections/{section_id}/students/{student_id}")
 def add_student_to_section(
@@ -259,7 +238,6 @@ def add_student_to_section(
         raise HTTPException(status_code=404, detail="Student not found")
     crud.add_student_to_section(db, section_id, student_id)
     return {"message": "Student added to section"}
-
 
 @api_router.post("/sections/{section_id}/teachers/{teacher_id}")
 def add_teacher_to_section(
