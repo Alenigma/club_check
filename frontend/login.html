@@ -50,21 +50,23 @@
     <div class="container login-form">
         <h1>Вход</h1>
         <p class="note">Используйте логин и пароль. По умолчанию доступны: student/studentpass и teacher/teacherpass.</p>
+        <div class="forms">
         <form id="login-form">
-            <label for="username">Логин</label>
-            <input id="username" type="text" placeholder="student" required />
+            <label class='label' for="username">Логин</label>
+            <input class='input' id="username" type="text" placeholder="student" required />
 
-            <label for="password">Пароль</label>
-            <input id="password" type="password" placeholder="••••••" required />
+            <label class='label' for="password">Пароль</label>
+            <input class='input' id="password" type="password" placeholder="••••••" required />
 
             <label for="role">Я —</label>
             <select id="role">
                 <option value="student">Студент</option>
                 <option value="teacher">Преподаватель</option>
             </select>
-
-            <button type="submit">Войти</button>
-        </form>
+            <button type="submit" class="submit">Войти</button>
+        </form>    
+        </div>
+        
     </div>
 </body>
 </html>
