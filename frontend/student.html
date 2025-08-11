@@ -8,22 +8,43 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Ваш QR-код</h1>
-        <div id="qr-code"></div>
-        <p>Код обновляется каждые 30 секунд.</p>
-        <p>Студент: John Student (ID: 2)</p>
-        <p id="attendance-count" style="margin-top: 12px; font-weight: bold;">Посещений: —</p>
-        <p style="font-size: 0.9em; color: #666;">Может потребоваться авторизация при первом действии.</p>
+    <div class="container student-page">
+        <!-- Верхний бейдж с именем -->
+        <div class="header-pill">
+            <div class="name" id="student-name">СТУДЕНТ</div>
+            <div class="icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="4" stroke="#004394" stroke-width="2"/>
+                    <path d="M4 20c1.8-4 5-6 8-6s6.2 2 8 6" stroke="#004394" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
 
-        <hr>
-        <h2>Сканировать мастер-QR</h2>
-        <label for="section-select">Секция:</label>
-        <select id="section-select" style="margin-bottom: 12px;"></select>
-        <p>Если преподаватель отсутствует, отсканируйте его мастер-QR для отметки посещения.</p>
-        <button id="show-scanner-btn">Сканировать мастер-QR</button>
-        <div id="student-scanner-container" style="display: none;">
-             <div id="student-qr-reader" style="width: 500px"></div>
+        <!-- QR-код -->
+        <div class="qr-wrapper">
+            <div id="qr-code"></div>
+        </div>
+
+        <!-- Таймер и прогресс -->
+        <div id="qr-timer" class="timer-display">00:00:30</div>
+        <div class="progress-container"><div id="qr-progress" class="progress-fill"></div></div>
+
+        <!-- Плашка с количеством посещений -->
+        <div class="pill" id="attendance-pill">
+            <span class="pill-title">ВСЕГО ПОСЕЩЕНИЙ :</span>
+            <span id="attendance-count">—</span>
+        </div>
+
+        <!-- Выбор секции и кнопка сканера -->
+        <div class="select-wrap">
+            <label class="select-label" for="section-select">Секция</label>
+            <select id="section-select" class="select"></select>
+        </div>
+        <button id="show-scanner-btn" class="action-btn">ОТКРЫТЬ СКАНЕР</button>
+
+        <!-- Сканер -->
+        <div id="student-scanner-container" class="scanner" style="display: none;">
+             <div id="student-qr-reader" class="qr-reader"></div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>

@@ -8,46 +8,57 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Панель преподавателя</h1>
-        <p style="font-size: 0.9em; color: #666;">Защищённая зона. Может потребоваться авторизация при первом действии.</p>
-        
-        <div id="scanner-container">
-            <div id="qr-reader" style="width: 500px"></div>
-            <div id="qr-reader-results"></div>
-        </div>
-
-        <hr>
-
-        <h2>Ручная отметка</h2>
-        <label for="section-select">Секция:</label>
-        <select id="section-select" style="margin-bottom: 12px;"></select>
-        <div id="student-list"></div>
-
-        <hr>
-
-        <h2>Режим мастер-QR</h2>
-        <div id="master-qr-controls">
-            <p>Включите режим, чтобы сгенерировать QR для студентов, когда вы отсутствуете.</p>
-            <label for="teacher-id-input">Ваш ID преподавателя:</label>
-            <input id="teacher-id-input" type="number" placeholder="напр. 1" style="width: 120px; margin-right: 8px;"/>
-            <button id="enable-master-qr">Включить режим</button>
-            <div id="master-qr-display" style="display: none;">
-                <h3>Текущий мастер-QR:</h3>
-                <div id="master-qr-code"></div>
-                <button id="disable-master-qr">Выключить режим</button>
+    <div class="container teacher-page">
+        <!-- Верхний бейдж с именем преподавателя -->
+        <div class="header-pill">
+            <div class="name" id="teacher-name">ПРЕПОДАВАТЕЛЬ</div>
+            <div class="icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="4" stroke="#004394" stroke-width="2"/>
+                    <path d="M4 20c1.8-4 5-6 8-6s6.2 2 8 6" stroke="#004394" stroke-width="2" stroke-linecap="round"/>
+                </svg>
             </div>
         </div>
 
-        <hr>
+        <!-- Сканер -->
+        <div class="select-wrap">
+            <label class="select-label" for="section-select">Секция для отметки</label>
+            <select id="section-select" class="select"></select>
+        </div>
+        <div id="scanner-container" class="scanner">
+            <div id="qr-reader" class="qr-reader"></div>
+            <div id="qr-reader-results"></div>
+        </div>
 
-        <h2>BLE-маячки (опционально)</h2>
-        <p style="font-size: 0.9em; color: #666;">Если включено на сервере, студенту нужно быть рядом с одним из зарегистрированных маячков.</p>
-        <div>
+        <!-- Ручная отметка -->
+        <div class="card">
+            <h2>Ручная отметка</h2>
+            <div id="student-list"></div>
+        </div>
+
+        <!-- Режим мастер-QR -->
+        <div class="card" id="master-qr-controls">
+            <h2>Режим мастер-QR</h2>
+            <p>Включите режим, чтобы сгенерировать QR для студентов, когда вы отсутствуете.</p>
+            <label for="teacher-id-input">Ваш ID преподавателя:</label>
+            <input id="teacher-id-input" type="number" placeholder="напр. 1" class="select" style="width: 140px;"/>
+            <button id="enable-master-qr" class="action-btn">Включить режим</button>
+            <div id="master-qr-display" style="display: none; margin-top: 10px;">
+                <h3>Текущий мастер-QR:</h3>
+                <div id="master-qr-code" class="qr-wrapper"></div>
+                <button id="disable-master-qr" class="action-btn" style="margin-top: 10px;">Выключить режим</button>
+            </div>
+        </div>
+
+        <!-- BLE-маячки -->
+        <div class="card">
+            <h2>BLE-маячки (опционально)</h2>
+            <p>Если включено на сервере, студенту нужно быть рядом с одним из зарегистрированных маячков.</p>
             <label for="beacon-section-select">Секция:</label>
-            <select id="beacon-section-select" style="margin-bottom: 12px;"></select>
-            <input id="beacon-id-input" type="text" placeholder="ID маячка" style="width: 240px; margin-right: 8px;" />
-            <button id="add-beacon-btn">Добавить маячок</button>
+            <select id="beacon-section-select" class="select"></select>
+            <div style="margin-top: 8px"></div>
+            <input id="beacon-id-input" type="text" placeholder="ID маячка" class="select" style="width: 240px;" />
+            <button id="add-beacon-btn" class="action-btn" style="margin-left: 8px;">Добавить маячок</button>
             <div id="beacon-list" style="margin-top: 12px;"></div>
         </div>
     </div>

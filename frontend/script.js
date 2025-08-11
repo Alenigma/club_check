@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const qrCodeDiv = document.getElementById('qr-code');
         const studentId = currentUserId || 0;
         let selectedSectionId = null;
+        const nameEl = document.getElementById('student-name');
+        if (payload?.sub && nameEl) {
+            nameEl.textContent = payload.sub.toUpperCase();
+        }
 
         const generateQrCode = (token) => {
             qrCodeDiv.innerHTML = '';
@@ -55,16 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await apiFetch(url);
                 const data = await res.json();
                 if (res.ok) {
-                    if (selectedSectionId) {
-                        attendanceEl.textContent = `Посещений в секции: ${data.count}`;
-                    } else {
-                        attendanceEl.textContent = `Посещений: ${data.count}`;
-                    }
+                    attendanceEl.textContent = String(data.count);
                 } else {
-                    attendanceEl.textContent = 'Посещений: —';
+                    attendanceEl.textContent = '—';
                 }
             } catch (e) {
-                attendanceEl.textContent = 'Посещений: —';
+                attendanceEl.textContent = '—';
             }
         };
 
@@ -83,7 +83,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // Таймер 30с и прогресс
+        const timerEl = document.getElementById('qr-timer');
+        const progressEl = document.getElementById('qr-progress');
+        let remaining = 30;
+        const renderTimer = () => {
+            const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const ss = String(remaining % 60).padStart(2, '0');
+            if (timerEl) timerEl.textContent = `00:${mm}:${ss}`;
+            if (progressEl) progressEl.style.width = `${(remaining / 30) * 100}%`;
+        };
+        const tick = () => {
+            remaining -= 1;
+            if (remaining <= 0) {
+                remaining = 30;
+                fetchQrToken();
+            }
+            renderTimer();
+        };
+
         fetchQrToken();
+        renderTimer();
+        setInterval(tick, 1000);
+        // резервный апдейт раз в 30с
         setInterval(fetchQrToken, 30000);
         updateAttendanceCount();
 
@@ -168,12 +190,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedSectionId = parseInt(e.target.value || '0') || null;
                 updateAttendanceCount();
             });
+            // загрузим список секций доступных студенту/общих
+            (async () => {
+                try {
+                    const res = await apiFetch(`${API_URL}/sections`);
+                    const sections = await res.json();
+                    sectionSelect.innerHTML = '<option value="">Выберите секцию...</option>';
+                    sections.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${s.name} (#${s.id})`;
+                        sectionSelect.appendChild(opt);
+                    });
+                } catch (_) {}
+            })();
         }
     }
 
     if (document.getElementById('qr-reader')) {
         if (!enforceLogin('teacher.html')) return;
         let selectedSectionId = null;
+        const teacherNameEl = document.getElementById('teacher-name');
+        const teacherPayload = parseJwt(getToken());
+        if (teacherPayload?.sub && teacherNameEl) {
+            teacherNameEl.textContent = teacherPayload.sub.toUpperCase();
+        }
 
         const syncOfflineScans = async () => {
             const offlineScans = JSON.parse(localStorage.getItem('offlineScans') || '[]');

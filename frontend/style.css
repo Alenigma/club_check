@@ -27,8 +27,13 @@ body {
     flex-direction: column;
     justify-content: center;
     
-    background-image: url(/BG-blur.jpg);
+    background-image: url('./BG-blur.jpg');
     background-repeat: no-repeat;
+}
+
+.student-page {
+    justify-content: flex-start;
+    padding: 16px;
 }
 
 h1 {
@@ -43,8 +48,8 @@ h1 {
 }
 
 #qr-code canvas {
-    width: 256px !important;
-    height: 256px !important;
+    width: 220px !important;
+    height: 220px !important;
 }
 
 #student-list {
@@ -113,4 +118,126 @@ h1 {
     border: 1px solid #004394;
     box-shadow: 1px 1px 12px #004394;
 }
+
+/* Student page components */
+.header-pill {
+    margin-top: 12px;
+    align-self: center;
+    width: calc(100% - 32px);
+    max-width: 340px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: rgba(255,255,255,0.9);
+    color: #004394;
+    border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(0, 67, 148, 0.25);
+}
+.header-pill .name {
+    font-weight: 700;
+    letter-spacing: .5px;
+}
+.header-pill .icon {
+    background: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 2px #004394;
+}
+
+.qr-wrapper {
+    margin-top: 36px;
+    align-self: center;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.timer-display {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #0c3f87;
+    text-align: center;
+    margin: 18px 0 4px 0;
+}
+
+.progress-container {
+    width: 80%;
+    height: 4px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 2px;
+    align-self: center;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+.progress-fill {
+    height: 100%;
+    width: 100%;
+    background: #004394;
+    transition: width .2s linear;
+}
+
+.pill {
+    align-self: center;
+    width: calc(100% - 32px);
+    max-width: 340px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: rgba(255,255,255,0.95);
+    color: #0c3f87;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(0, 67, 148, 0.25);
+    font-weight: 700;
+}
+.pill .pill-title { opacity: .9; }
+
+.select-wrap { align-self: center; margin-top: 12px; width: 80%; }
+.select-label { display: block; margin-bottom: 6px; }
+.select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.9);
+    color: #0c3f87;
+}
+
+.action-btn {
+    align-self: center;
+    margin-top: 14px;
+    color: #004394;
+    border-radius: 24px;
+    padding: 10px 20px;
+    background-color: white;
+    border: 1px solid #004394;
+    box-shadow: 0 6px 18px rgba(0, 67, 148, 0.35);
+    font-weight: 700;
+}
+
+.scanner { margin-top: 16px; align-self: center; }
+.qr-reader { width: 320px; max-width: 90vw; }
+
+/* Generic card block for teacher sections */
+.card {
+    align-self: stretch;
+    width: 100%;
+    max-width: 340px;
+    margin: 12px auto 0 auto;
+    background: rgba(255,255,255,0.85);
+    color: #0c3f87;
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 67, 148, 0.25);
+}
+
+.teacher-page { justify-content: flex-start; padding: 16px; }
 
